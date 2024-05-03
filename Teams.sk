@@ -1,9 +1,14 @@
+options:
+    # Set this to false if you use a seperate chat plugin
+    chatOveride: true
+    maxNameLength: 15
+
 function addPlayerToTeam(name: string, player: offline player):
     if isPlayerInTeam({_player}) is true:
         removePlayerFromTeam({_player})
     set {teams.Player.%{_player}%.Team} to {_name}
     add {_player} to {teams.Team.%{_name}%.Members::*}
-    updateTablistName({_player})
+    updateName({_player})
 
 function removePlayerFromTeam(player: offline player):
     set {_team} to {teams.Player.%{_player}%.Team}
@@ -12,7 +17,7 @@ function removePlayerFromTeam(player: offline player):
     delete {teams.Player.%{_player}%.Team}
     if (getAdminsInTeam({_team}) is not set):
         deleteTeam({_team})
-    updateTablistName({_player})
+    updateName({_player})
 
 function createTeam(name: string, password: string, player: player):
     setTeamPassword({_name}, {_password})
@@ -102,7 +107,7 @@ function areEnemiesNear(player: player) :: boolean:
             return true
     return false
 
-function updateTablistName(player: player):
+function updateName(player: player):
     if isPlayerInTeam({_player}) is true:
         set tablist name of {_player} to "&r&c%getPlayerTeam({_player})%&f &r%{_player}%"
         set display name of {_player} to "&r&c%getPlayerTeam({_player})%&f &r%{_player}%"
@@ -164,8 +169,11 @@ command teamCreate <name: string> <password: string>:
             send "&cYou are already in a team!" to player
         else:
             if doesTeamExist({_name}) is false:
-                createTeam({_name}, {_password}, player)
-                send "&4Created team" to player
+                if length of {_name} is less than or equal to {@maxNameLength}:
+                    createTeam({_name}, {_password}, player)
+                    send "&4Created team" to player
+                else:
+                    send "&cTeam name is too long" to player
             else:
                 send "&cTeam already exists" to player
 
@@ -294,7 +302,7 @@ command teamRally:
             send "&cYou are not in a team" to player
 
 on join:
-    updateTablistName(player)
+    updateName(player)
 
 on damage:
     if getTeamFF(getPlayerTeam(attacker)) is false:
@@ -303,5 +311,6 @@ on damage:
             send "&cYou can not hurt your team" to attacker
 
 on chat:
-    cancel event
-    send "%player's display name%: %message%"
+    if {@chatOveride} is true:
+        cancel event
+        send "%player's display name%: %message%"
