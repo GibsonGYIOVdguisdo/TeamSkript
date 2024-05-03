@@ -2,6 +2,8 @@ options:
     # Set this to false if you use a seperate chat plugin
     chatOveride: true
     maxNameLength: 15
+    # Distance is x + y combined e.g. if this was 10000 it would be 5000 in x and y or 10000 in just x or y
+    maxTeleportDistance: 100000
 
 function addPlayerToTeam(name: string, player: offline player):
     if isPlayerInTeam({_player}) is true:
@@ -261,8 +263,17 @@ command teamsetHome:
     trigger:
         if isPlayerInTeam(player) is true:
             if isPlayerTeamAdmin(player) is true:
-                setTeamHome(getPlayerTeam(player), location of player)
-                send "&4Team home set" to player
+                if world of player is "world_nether":
+                    if (distance between location of player and spawn point of world of player) is less than {@maxTeleportDistance} / 8:
+                        setTeamHome(getPlayerTeam(player), location of player)
+                        send "&4Team home set" to player
+                    else:
+                        send "&cYou must be closer to the world spawn" to player
+                else if distance between location of player and spawn point of world of player is less than {@maxTeleportDistance}:
+                    setTeamHome(getPlayerTeam(player), location of player)
+                    send "&4Team home set" to player
+                else:
+                    send "&cYou must be closer to the world spawn" to player
             else:
                 send "&cYou are not a team admin" to player
         else:
@@ -272,8 +283,18 @@ command teamsetrally:
     trigger:
         if isPlayerInTeam(player) is true:
             if isPlayerTeamAdmin(player) is true:
-                setTeamRally(getPlayerTeam(player), location of player)
-                send "&4Team rally set" to player
+                if world of player is "world_nether":
+                    if (distance between location of player and spawn point of world of player) is less than {@maxTeleportDistance} / 8:
+                        broadcast "aaa"
+                        setTeamHome(getPlayerTeam(player), location of player)
+                        send "&4Team home set" to player
+                    else:
+                        send "&cYou must be closer to the world spawn" to player
+                else if distance between location of player and spawn point of world of player is less than {@maxTeleportDistance}:
+                    setTeamRally(getPlayerTeam(player), location of player)
+                    send "&4Team rally set" to player
+                else:
+                    send "&cYou must be closer to the world spawn" to player
             else:
                 send "&cYou are not a team admin" to player
         else:
