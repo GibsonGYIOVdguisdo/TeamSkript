@@ -4,6 +4,7 @@ options:
     maxNameLength: 15
     # Distance is x + y combined e.g. if this was 10000 it would be 5000 in x and y or 10000 in just x or y
     maxTeleportDistance: 100000
+    timeBeforeTeleport: 20
 
 function addPlayerToTeam(name: string, player: offline player):
     if isPlayerInTeam({_player}) is true:
@@ -117,6 +118,10 @@ function updateName(player: player):
         set tablist name of {_player} to "&r%{_player}%"
         set display name of {_player} to "&r%{_player}%"
 
+function removePitchAndYaw(location: location) :: location:
+    set yaw of {_location} to 0
+    set pitch of {_location} to 0
+    return {_location}
 
 command teamJoin <name: string> <password: string>:
     usage: /teamCreate <Team name> <Password>
@@ -298,13 +303,25 @@ command teamsetrally:
                 send "&cYou are not a team admin" to player
         else:
             send "&cYou are not in a team" to player
-    
+
 command teamHome:
     trigger:
         if isPlayerInTeam(player) is true:
             if getTeamHome(getPlayerTeam(player)) is set:
-                teleport player to getTeamHome(getPlayerTeam(player))
-                send "&cTeleporting to home" to player
+                if areEnemiesNear(player) is false:
+                    teleport player to getTeamHome(getPlayerTeam(player))
+                    send "&cTeleporting to home" to player
+                else:
+                    send "&cEnemies are nearby"
+                    set {_location} to removePitchAndYaw(location of player)
+                    loop {@timeBeforeTeleport} times:
+                        wait 1 second
+                        send "&cTeleporting in %{@timeBeforeTeleport}-loop-value% seconds"
+                        if {_location} is removePitchAndYaw(location of player):
+                            teleport player to getTeamHome(getPlayerTeam(player))
+                            send "&cTeleporting to home" to player
+                        else:
+                            send "&cYou moved teleport canceled"
             else:
                 send "&cNo team home is set" to player
         else:
@@ -314,8 +331,20 @@ command teamRally:
     trigger:
         if isPlayerInTeam(player) is true:
             if getTeamRally(getPlayerTeam(player)) is set:
-                teleport player to getTeamRally(getPlayerTeam(player))
-                send "&cTeleporting to rally" to player
+                if areEnemiesNear(player) is false:
+                    teleport player to getTeamRally(getPlayerTeam(player))
+                    send "&cTeleporting to rally" to player
+                else:
+                    send "&cEnemies are nearby"
+                    set {_location} to removePitchAndYaw(location of player)
+                    loop {@timeBeforeTeleport} times:
+                        wait 1 second
+                        send "&cTeleporting in %{@timeBeforeTeleport}-loop-value% seconds"
+                        if {_location} is removePitchAndYaw(location of player):
+                            teleport player to getTeamRally(getPlayerTeam(player))
+                            send "&cTeleporting to rally" to player
+                        else:
+                            send "&cYou moved teleport canceled"
             else:
                 send "&cNo team rally is set" to player
         else:
