@@ -313,4 +313,4 @@ on damage:
 on chat:
     if {@chatOveride} is true:
         cancel event
-        send "%player's display name%: %message%"
+        send "%player's display name%: %message%" to all players
