@@ -285,9 +285,8 @@ command teamsetrally:
             if isPlayerTeamAdmin(player) is true:
                 if world of player is "world_nether":
                     if (distance between location of player and spawn point of world of player) is less than {@maxTeleportDistance} / 8:
-                        broadcast "aaa"
                         setTeamHome(getPlayerTeam(player), location of player)
-                        send "&4Team home set" to player
+                        send "&4Team rally set" to player
                     else:
                         send "&cYou must be closer to the world spawn" to player
                 else if distance between location of player and spawn point of world of player is less than {@maxTeleportDistance}:
