@@ -317,11 +317,11 @@ command teamHome:
                     loop {@timeBeforeTeleport} times:
                         wait 1 second
                         send "&cTeleporting in %{@timeBeforeTeleport}-loop-value% seconds"
-                        if {_location} is removePitchAndYaw(location of player):
-                            teleport player to getTeamHome(getPlayerTeam(player))
-                            send "&cTeleporting to home" to player
-                        else:
+                        if {_location} is not removePitchAndYaw(location of player):
                             send "&cYou moved teleport canceled"
+                            exit trigger
+                    teleport player to getTeamHome(getPlayerTeam(player))
+                    send "&cTeleporting to rally" to player
             else:
                 send "&cNo team home is set" to player
         else:
@@ -340,11 +340,12 @@ command teamRally:
                     loop {@timeBeforeTeleport} times:
                         wait 1 second
                         send "&cTeleporting in %{@timeBeforeTeleport}-loop-value% seconds"
-                        if {_location} is removePitchAndYaw(location of player):
-                            teleport player to getTeamRally(getPlayerTeam(player))
-                            send "&cTeleporting to rally" to player
-                        else:
+                        if {_location} is not removePitchAndYaw(location of player):
                             send "&cYou moved teleport canceled"
+                            exit trigger
+                    teleport player to getTeamRally(getPlayerTeam(player))
+                    send "&cTeleporting to rally" to player
+                        
             else:
                 send "&cNo team rally is set" to player
         else:
