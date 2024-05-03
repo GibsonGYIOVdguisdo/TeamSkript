@@ -4,6 +4,7 @@ options:
     maxNameLength: 15
     # Distance is x + y combined e.g. if this was 10000 it would be 5000 in x and y or 10000 in just x or y
     maxTeleportDistance: 100000
+    distanceForNearby: 50
     timeBeforeTeleport: 20
 
 function addPlayerToTeam(name: string, player: offline player):
@@ -105,7 +106,7 @@ function getTeamRally(team: string) :: location:
     return {teams.Team.%{_Team}%.Rally}
 
 function areEnemiesNear(player: player) :: boolean:
-    loop all players in radius 50 of {_player}:
+    loop all players in radius {@distanceForNearby} of {_player}:
         if getPlayerTeam(loop-value) is not getPlayerTeam({_player}):
             return true
     return false
