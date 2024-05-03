@@ -3,6 +3,7 @@ function addPlayerToTeam(name: string, player: offline player):
         removePlayerFromTeam({_player})
     set {teams.Player.%{_player}%.Team} to {_name}
     add {_player} to {teams.Team.%{_name}%.Members::*}
+    updateTablistName({_player})
 
 function removePlayerFromTeam(player: offline player):
     set {_team} to {teams.Player.%{_player}%.Team}
@@ -11,6 +12,7 @@ function removePlayerFromTeam(player: offline player):
     delete {teams.Player.%{_player}%.Team}
     if (getAdminsInTeam({_team}) is not set):
         deleteTeam({_team})
+    updateTablistName({_player})
 
 function createTeam(name: string, password: string, player: player):
     setTeamPassword({_name}, {_password})
@@ -100,12 +102,14 @@ function areEnemiesNear(player: player) :: boolean:
             return true
     return false
 
+function updateTablistName(player: player):
+    if isPlayerInTeam({_player}) is true:
+        set tablist name of {_player} to "&r&c%getPlayerTeam({_player})%&f &r%{_player}%"
+        set display name of {_player} to "&r&c%getPlayerTeam({_player})%&f &r%{_player}%"
+    else:
+        set tablist name of {_player} to "&r%{_player}%"
+        set display name of {_player} to "&r%{_player}%"
 
-on damage:
-    if getTeamFF(getPlayerTeam(attacker)) is false:
-        if getPlayerTeam(attacker) is getPlayerTeam(victim):
-            cancel event
-            send "&cYou can not hurt your team" to attacker
 
 command teamJoin <name: string> <password: string>:
     usage: /teamCreate <Team name> <Password>
@@ -288,3 +292,16 @@ command teamRally:
                 send "&cNo team rally is set" to player
         else:
             send "&cYou are not in a team" to player
+
+on join:
+    updateTablistName(player)
+
+on damage:
+    if getTeamFF(getPlayerTeam(attacker)) is false:
+        if getPlayerTeam(attacker) is getPlayerTeam(victim):
+            cancel event
+            send "&cYou can not hurt your team" to attacker
+
+on chat:
+    cancel event
+    send "%player's display name%: %message%"
