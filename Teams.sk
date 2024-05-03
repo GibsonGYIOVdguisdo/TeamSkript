@@ -1,0 +1,290 @@
+function addPlayerToTeam(name: string, player: offline player):
+    if isPlayerInTeam({_player}) is true:
+        removePlayerFromTeam({_player})
+    set {teams.Player.%{_player}%.Team} to {_name}
+    add {_player} to {teams.Team.%{_name}%.Members::*}
+
+function removePlayerFromTeam(player: offline player):
+    set {_team} to {teams.Player.%{_player}%.Team}
+    remove all {_player} from {teams.Team.%{_team}%.Members::*}
+    remove all {_player} from {teams.Team.%{_team}%.Admins::*}
+    delete {teams.Player.%{_player}%.Team}
+    if (getAdminsInTeam({_team}) is not set):
+        deleteTeam({_team})
+
+function createTeam(name: string, password: string, player: player):
+    setTeamPassword({_name}, {_password})
+    add {_name} to {teams.Teams::*}
+    addPlayerToTeam({_name}, {_player})
+    add {_player} to {teams.Team.%{_name}%.Admins::*}
+
+function deleteTeam(name: string):
+    loop getPlayersInTeam({_name}):
+        removePlayerFromTeam({_name})
+    remove {_name} from {teams.Teams::*}
+    delete {teams.Team.%{_name}%.Members::*}
+    delete {teams.Team.%{_name}%.Admins::*}
+    delete {teams.%{_name}%.FF}
+    delete {teams.%{_name}%.Password}
+    delete {teams.Team.%{_name}%.Home}
+    delete {teams.Team.%{_name}%.Rally}
+
+function addAdminToTeam(name: string, player: offline player):
+    if {teams.Team.%{_name}%.Members::*} contains {_player}:
+        remove all {_player} from {teams.Team.%{_name}%.Admins::*}
+        add {_player} to {teams.Team.%{_name}%.Admins::*}
+
+function removeAdminFromTeam(name: string, player: offline player):
+    if {teams.Team.%{_name}%.Admins::*} contains {_player}:
+        remove all {_player} from {teams.Team.%{_name}%.Admins::*}
+
+
+function isPlayerInTeam(player: offline player) :: boolean:
+    if {teams.Player.%{_player}%.Team} is set: 
+        return true
+    return false
+    
+function isPlayerTeamAdmin(player: offline player) :: boolean:
+    if getAdminsInTeam(getPlayerTeam({_player})) contains {_player}: 
+        return true
+    return false
+
+function getPlayersInTeam(name: string) :: objects:
+    return {teams.Team.%{_name}%.Members::*}
+
+function getAdminsInTeam(name: string) :: objects:
+    return {teams.Team.%{_name}%.Admins::*}
+
+function getPlayerTeam(player: offline player) :: string:
+    return {teams.Player.%{_player}%.Team}
+
+
+function doesTeamExist(name: string) :: boolean:
+    if {teams.Teams::*} contains {_name}:
+        return true
+    return false
+
+function isTeamPasswordCorrect(name: string, password: string) :: boolean:
+    if {teams.%{_name}%.Password} is {_password}:
+        return true
+    else:
+        return false
+
+function setTeamPassword(name: string, password: string):
+    set {teams.%{_name}%.Password} to {_password}
+
+function getTeamPassword(name: string) :: string:
+    return {teams.%{_name}%.Password}
+
+function setTeamFF(name: string, enabled: boolean):
+    set {teams.%{_name}%.FF} to {_enabled}
+
+function getTeamFF(name: string) :: boolean:
+    return {teams.%{_name}%.FF}
+
+function setTeamHome(team: string, location: location):
+    set {teams.Team.%{_Team}%.Home} to {_location}
+    
+function getTeamHome(team: string) :: location:
+    return {teams.Team.%{_Team}%.Home}
+    
+function setTeamRally(team: string, location: location):
+    set {teams.Team.%{_Team}%.Rally} to {_location}
+    
+function getTeamRally(team: string) :: location:
+    return {teams.Team.%{_Team}%.Rally}
+
+function areEnemiesNear(player: player) :: boolean:
+    loop all players in radius 50 of {_player}:
+        if getPlayerTeam(loop-value) is not getPlayerTeam({_player}):
+            return true
+    return false
+
+
+on damage:
+    if getTeamFF(getPlayerTeam(attacker)) is false:
+        if getPlayerTeam(attacker) is getPlayerTeam(victim):
+            cancel event
+            send "&cYou can not hurt your team" to attacker
+
+command teamJoin <name: string> <password: string>:
+    usage: /teamCreate <Team name> <Password>
+    cooldown: 1
+    trigger:
+        if doesTeamExist({_name}) is true:
+            if isPlayerInTeam(player) is false:
+                if getTeamPassword({_name}) is {_password}:
+                    addPlayerToTeam({_name}, player)
+                    loop getPlayersInTeam(getPlayerTeam(player)):
+                        if player is not loop-value:
+                            send "&4%player% has joined the team" to loop-value
+                    send "&4Joined team %{_name}%" to player
+                else:
+                    send "&cWrong password" to player
+            else:
+                send "&cYou are already in a team" to player
+        else:
+            send "&cTeam does not exist" to player
+
+command teamSetPassword <password: string>:
+    trigger:
+        if isPlayerInTeam(player) is true:
+            if isPlayerTeamAdmin(player) is true:
+                setTeamPassword(getPlayerTeam(player), {_password})
+                send "&4Team password changed" to player
+            else:
+                send "&cYou are not a team admin" to player
+        else:
+            send "&cYou are not in a team" to player
+
+command teamKick <player: offline player>:
+    trigger:
+        player is not {_player}
+        if getPlayerTeam(player) is getPlayerTeam({_player}):
+            if isPlayerTeamAdmin(player) is true:
+                removePlayerFromTeam(player)
+                send "&cRemoved %{_player}% from team" to player
+                send "&cYou have been kicked from %getPlayerTeam(player)% from team" to {_player}
+            else:
+                send "&cYou are not a team admin" to player
+        else:
+            send "&cThat player is not in your team" to player
+
+
+
+command teamCreate <name: string> <password: string>:
+    usage: /teamCreate <Team name> <Password>
+    cooldown: 1
+    trigger:
+        if isPlayerInTeam(player) is true:
+            send "&cYou are already in a team!" to player
+        else:
+            if doesTeamExist({_name}) is false:
+                createTeam({_name}, {_password}, player)
+                send "&4Created team" to player
+            else:
+                send "&cTeam already exists" to player
+
+command teamMemberList:
+    trigger:
+        send "Members:" to player
+        send "%getPlayersInTeam(getPlayerTeam(player))%" to player
+        send "Admins:" to player
+        send "%getAdminsInTeam(getPlayerTeam(player))%" to player
+
+command teamList:
+    trigger:
+        send "Teams:" to player
+        send "--"
+        loop {teams.Teams::*}:
+            send loop-value to player
+        send "--" to player
+
+command teamDelete:
+    trigger:
+        if isPlayerInTeam(player) is true:
+            if isPlayerTeamAdmin(player) is true:
+                loop getPlayersInTeam(getPlayerTeam(player)):
+                    send "&4%getPlayerTeam(player)% has disbanded" to loop-value
+                deleteTeam(getPlayerTeam(player))
+            else:
+                send "&4You are not a team admin" to player
+        else:
+            send "&4You are not in a team" to player
+
+command teamPromote <player: offline player>:
+    trigger:
+        if getPlayerTeam(player) is getPlayerTeam({_player}):
+            if isPlayerTeamAdmin(player) is true:
+                addAdminToTeam(getPlayerTeam({_player}), {_player})
+                send "&4You have been promoted" to {_player}
+                send "&4Promoted %{_player}%"
+            else:
+                send "&cYou are not a team admin" to player
+        else:
+            send "&cThat player is not in your team" to player
+
+command teamDemote <player: offline player>:
+    trigger:
+        player is not {_player}
+        if getPlayerTeam(player) is getPlayerTeam({_player}):
+            if isPlayerTeamAdmin(player) is true:
+                if isPlayerTeamAdmin({_player}) is true:
+                    removeAdminFromTeam(getPlayerTeam({_player}), {_player})
+                    send "&4You have been demoted" to {_player}
+                    send "&4Demoted %{_player}%"
+                else:
+                    send "&cThat player is not a team admin" to player
+            else:
+                send "&cYou are not a team admin" to player
+        else:
+            send "&cThat player is not in your team" to player
+
+
+command teamFF <enabled: boolean>:
+    usage: /teamFF <true or false>
+    trigger:
+        if isPlayerInTeam(player) is true:
+            if isPlayerTeamAdmin(player) is true:
+                loop getPlayersInTeam(getPlayerTeam(player)):
+                    send "&4Friendly fire has been set to %{_enabled}%" to loop-value
+                setTeamFF(getPlayerTeam(player), {_enabled})
+            else:
+                send "&cYou are not a team admin" to player
+        else:
+            send "&cYou are not in a team" to player
+
+command teamLeave:
+    trigger:
+        if isPlayerInTeam(player) is true:
+            send "&4You have left team %getPlayerTeam(player)%" to player
+            loop getPlayersInTeam(getPlayerTeam(player)):
+                if loop-value is not player:
+                    send "&c%player% has left the team" to loop-value
+            removePlayerFromTeam(player)
+        else:
+            send "&cYou are not in a team" to player
+
+command teamsetHome:
+    trigger:
+        if isPlayerInTeam(player) is true:
+            if isPlayerTeamAdmin(player) is true:
+                setTeamHome(getPlayerTeam(player), location of player)
+                send "&4Team home set" to player
+            else:
+                send "&cYou are not a team admin" to player
+        else:
+            send "&cYou are not in a team" to player
+
+command teamsetrally:
+    trigger:
+        if isPlayerInTeam(player) is true:
+            if isPlayerTeamAdmin(player) is true:
+                setTeamRally(getPlayerTeam(player), location of player)
+                send "&4Team rally set" to player
+            else:
+                send "&cYou are not a team admin" to player
+        else:
+            send "&cYou are not in a team" to player
+    
+command teamHome:
+    trigger:
+        if isPlayerInTeam(player) is true:
+            if getTeamHome(getPlayerTeam(player)) is set:
+                teleport player to getTeamHome(getPlayerTeam(player))
+                send "&cTeleporting to home" to player
+            else:
+                send "&cNo team home is set" to player
+        else:
+            send "&cYou are not in a team" to player
+
+command teamRally:
+    trigger:
+        if isPlayerInTeam(player) is true:
+            if getTeamRally(getPlayerTeam(player)) is set:
+                teleport player to getTeamRally(getPlayerTeam(player))
+                send "&cTeleporting to rally" to player
+            else:
+                send "&cNo team rally is set" to player
+        else:
+            send "&cYou are not in a team" to player
